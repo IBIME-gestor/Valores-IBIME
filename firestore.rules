@@ -17,7 +17,7 @@ service cloud.firestore {
 
     function ADMINS() {
       return [
-        'director@ibime.edu.mx'
+        'josue.jain@ibime.edu.mx'
       ];
     }
 
