@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "principios-ibime"
     "public": ".",
     "ignore": [
       "firebase.json",
