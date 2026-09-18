@@ -7,12 +7,12 @@
 /* 1) Pega aquí lo que te da Firebase en:
       Consola → ⚙ Configuración del proyecto → Tus apps → App web */
 export const firebaseConfig = {
-  apiKey:            "PEGA_AQUI_TU_API_KEY",
-  authDomain:        "TU-PROYECTO.firebaseapp.com",
-  projectId:         "TU-PROYECTO",
-  storageBucket:     "TU-PROYECTO.firebasestorage.app",
-  messagingSenderId: "000000000000",
-  appId:             "1:000000000000:web:xxxxxxxxxxxxxxxx"
+  apiKey: "AIzaSyAdNQ2Kx5P2uAlswmaDAU05s3piBHRPuEw",
+  authDomain: "valores-ibime.firebaseapp.com",
+  projectId: "valores-ibime",
+  storageBucket: "valores-ibime.firebasestorage.app",
+  messagingSenderId: "920418388550",
+  appId: "1:920418388550:web:8e91029b7a244c02321847"
 };
 
 /* 2) Dominio institucional. Solo los correos de este dominio pueden entrar.
@@ -23,7 +23,7 @@ export const DOMINIO_INSTITUCIONAL = "ibime.edu.mx";
       Pon aquí el tuyo. Debe coincidir, letra por letra, con la lista
       que escribas en firestore.rules. */
 export const ADMINS_SEMILLA = [
-  "director@ibime.edu.mx"
+  "josue.jain@ibime.edu.mx"
 ];
 
 /* 4) Los doce principios, uno por mes. Puedes cambiarlos aquí antes de
