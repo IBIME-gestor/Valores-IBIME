@@ -1,6 +1,6 @@
 {
-  "name": "Valores IBIME",
-  "short_name": "Valores IBIME",
+  "name": "Principios IBIME",
+  "short_name": "Principios IBIME",
   "description": "Registro de asistencia a las actividades de los 12 principios IBIME.",
   "start_url": "./index.html",
   "scope": "./",
