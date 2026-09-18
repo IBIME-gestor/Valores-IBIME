@@ -234,7 +234,7 @@ const nombreArchivo = () => {
   const extra = [$("#f-plantel").value, $("#f-nivel").value,
     $("#f-grado").value && $("#f-grado").value + "°", $("#f-grupo").value]
     .filter(Boolean).join("-").replace(/\s+/g, "");
-  return `Valores-IBIME_${MESES[+m - 1]}-${y}${extra ? "_" + extra : ""}`;
+  return `Principios-IBIME_${MESES[+m - 1]}-${y}${extra ? "_" + extra : ""}`;
 };
 
 async function bajarExcel() {
