@@ -1,5 +1,5 @@
 /* ============================================================
-   Valores IBIME — núcleo
+   Principios IBIME — núcleo
    Sesión, roles, catálogo de alumnos en memoria y enrutador.
    ============================================================ */
 
@@ -221,7 +221,7 @@ const soloAdmin = ["principios", "alumnos", "usuarios"];
 export function titulo(t, sub = "") {
   $("#view-title").textContent = t;
   $("#view-sub").textContent = sub;
-  document.title = `${t} · Valores IBIME`;
+  document.title = `${t} · Principios IBIME`;
 }
 
 let vistaActual = null;
