@@ -1,0 +1,122 @@
+rules_version = '2';
+
+/* ============================================================
+   Valores IBIME — reglas de seguridad
+   Cópialas completas en: Firebase → Firestore Database → Reglas.
+
+   ANTES DE PUBLICAR cambia dos cosas:
+   1. DOMINIO  → el dominio de correo de tu colegio
+   2. ADMINS   → los correos que son administradores desde el inicio
+                 (los mismos que pusiste en js/config.js)
+   ============================================================ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function DOMINIO() { return 'ibime.edu.mx'; }
+
+    function ADMINS() {
+      return [
+        'director@ibime.edu.mx'
+      ];
+    }
+
+    function entro() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function correo() {
+      return request.auth.token.email.lower();
+    }
+
+    /* Solo cuentas del colegio. Si quieres abrirlo a cualquier cuenta de
+       Google, deja este return en true. */
+    function delColegio() {
+      return entro() && correo().split('@')[1] == DOMINIO();
+    }
+
+    function perfil() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function activo() {
+      return delColegio() && perfil().activo != false;
+    }
+
+    function admin() {
+      return delColegio() && (correo() in ADMINS() || perfil().rol == 'admin');
+    }
+
+    /* ---------- personas con acceso ---------- */
+    match /usuarios/{uid} {
+      allow read: if request.auth.uid == uid || admin();
+
+      // primer ingreso: cada quien crea su propio perfil, como colaborador
+      allow create: if delColegio()
+                    && request.auth.uid == uid
+                    && request.resource.data.correo == correo()
+                    && (request.resource.data.rol == 'colaborador'
+                        || (request.resource.data.rol == 'admin' && correo() in ADMINS()))
+                    && request.resource.data.activo == true;
+
+      // cada quien refresca su nombre, foto y último acceso; el rol no
+      allow update: if admin()
+                    || (request.auth.uid == uid
+                        && (request.resource.data.rol == resource.data.rol
+                            || correo() in ADMINS())
+                        && request.resource.data.activo == resource.data.activo
+                        && request.resource.data.correo == resource.data.correo);
+
+      allow delete: if false;   // el historial de accesos no se borra
+    }
+
+    /* ---------- catálogo de alumnos ---------- */
+    match /alumnos/{matricula} {
+      allow read:  if activo();
+      allow write: if admin();
+    }
+
+    match /meta/{doc} {
+      allow read:  if delColegio();
+      allow write: if admin();
+    }
+
+    /* ---------- principios y actividades ---------- */
+    match /principios/{id} {
+      allow read:  if activo();
+      allow write: if admin();
+    }
+
+    match /actividades/{id} {
+      allow read:   if activo();
+      allow create, delete: if admin();
+      // el contador de asistencias lo mueve cualquiera que pase lista
+      allow update: if admin()
+                    || (activo() && request.resource.data.diff(resource.data)
+                          .affectedKeys().hasOnly(['total']));
+    }
+
+    /* ---------- asistencias ---------- */
+    match /asistencias/{id} {
+      allow read: if activo();
+
+      allow create: if activo()
+                    && request.resource.data.registradoPorUid == request.auth.uid
+                    && request.resource.data.matricula is string
+                    && request.resource.data.actividadId is string
+                    && id == request.resource.data.actividadId + '__' + request.resource.data.matricula;
+
+      // un registro no se edita: o está o no está
+      allow update: if false;
+
+      // lo quita quien lo puso, o la administración
+      allow delete: if admin()
+                    || (activo() && resource.data.registradoPorUid == request.auth.uid);
+    }
+
+    /* Todo lo demás queda cerrado. */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
