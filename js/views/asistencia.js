@@ -16,9 +16,13 @@ let registrados = new Map();   // matrícula → asistencia
 let desuscribir = null;
 const RECORDAR = "ibime.actividad";
 
-export function salir() { desuscribir?.(); desuscribir = null; }
+export function salir() {
+  desuscribir?.(); desuscribir = null;
+  document.body.classList.remove("vista-fija");
+}
 
 export async function render(cont) {
+  document.body.classList.add("vista-fija");
   titulo("Pase de lista", "Escribe la matrícula y el registro queda hecho");
   cont.innerHTML = cargando("Buscando las actividades del año…");
 
