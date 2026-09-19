@@ -9,6 +9,7 @@ import {
 } from "./firebase.js";
 import { DOMINIO_INSTITUCIONAL, ADMINS_SEMILLA, AJUSTES } from "./config.js";
 import { $, $$, esc, avisar, limpiaMatricula, norm } from "./utils.js";
+import { VERSION } from "./version.js";
 
 /* ---------- estado compartido ---------- */
 export const estado = {
@@ -304,3 +305,25 @@ function pintarRed() {
 window.addEventListener("online", () => { pintarRed(); avisar("Conexión restablecida. Sincronizando.", "ok"); });
 window.addEventListener("offline", () => { pintarRed(); avisar("Sin conexión. Los registros se guardan y se envían al volver la señal.", "aviso", 5000); });
 pintarRed();
+
+/* ============================================================
+   ACTUALIZACIÓN AUTOMÁTICA
+   La app revisa sola si se publicó una versión nueva, PERO solo en el
+   momento en que alguien regresa a la pestaña/app (no hay temporizador
+   corriendo de fondo, así que no genera tráfico mientras nadie toca el
+   celular). Es justo el mejor momento para recargar: la persona apenas
+   está volviendo, así que un instante de carga no interrumpe nada. */
+async function hayVersionNueva() {
+  try {
+    const res = await fetch(`js/version.js?_=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) return false;
+    return !(await res.text()).includes(VERSION);
+  } catch { return false; }   // sin conexión: se revisa la próxima vez que regrese
+}
+
+async function revisarVersion() {
+  if (await hayVersionNueva()) location.reload();
+}
+
+document.addEventListener("visibilitychange", () => { if (!document.hidden) revisarVersion(); });
+window.addEventListener("pageshow", e => { if (e.persisted) revisarVersion(); });
