@@ -424,6 +424,12 @@ body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
   body.vista-fija .pase{ flex:none; display:grid; grid-template-rows:none; }
   body.vista-fija .pase > .caja{ display:block; }
   body.vista-fija .recientes{ flex:none; max-height:60vh; overflow-y:auto; }
+
+  /* La caja de matrícula queda pegada arriba mientras se baja por la lista;
+     al volver a subir a su lugar original, se suelta sola. */
+  body.vista-fija .pase > .buscador{
+    position:sticky; top:8px; z-index:20;
+  }
 }
 .reciente{
   display:flex; align-items:center; gap:12px;
