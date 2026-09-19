@@ -123,13 +123,14 @@ function pintar(cont) {
     else avisar("Esa matrícula no aparece en la base.", "mal");
   });
 
-  /* Al enfocar el campo (empezar a escribir o escanear), el cuadro de
-     matrícula "brinca" a su posición anclada arriba, bajo la barra
-     superior, para dejar el máximo espacio libre a las sugerencias.
-     El teclado tarda un poco en aparecer (sobre todo en iPad), así que
-     se recalcula el espacio disponible varias veces mientras se acomoda. */
+  /* Al enfocar el campo, el teclado tarda un poco en aparecer (sobre
+     todo en iPad); se recalcula el espacio disponible varias veces
+     mientras se acomoda, para que las sugerencias no queden tapadas.
+     Importante: aquí NO se mueve el scroll a la fuerza — el cuadro ya
+     queda anclado arriba solo (position: sticky); forzar el scroll
+     peleaba con el propio comportamiento del navegador al abrir el
+     teclado y lo trababa. */
   q.addEventListener("focus", () => {
-    $(".pase > .buscador")?.scrollIntoView({ behavior: "smooth", block: "start" });
     ajustarResultado();
     [80, 250, 450].forEach(ms => setTimeout(ajustarResultado, ms));
   });
