@@ -413,6 +413,18 @@ body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
 @media (max-width:1000px){
   body.vista-fija .pase{ grid-template-rows:auto 1fr; }
 }
+
+/* En celular el modo "pantalla fija" se desactiva: se vuelve al scroll normal de página. */
+@media (max-width:720px){
+  body.vista-fija{ overflow:auto; }
+  body.vista-fija .shell{ height:auto; min-height:100svh; }
+  body.vista-fija .work{ height:auto; min-height:0; overflow:visible; }
+  body.vista-fija .view{ flex:none; display:block; overflow:visible; }
+  body.vista-fija .cascada{ flex:none; display:block; overflow:visible; gap:0; }
+  body.vista-fija .pase{ flex:none; display:grid; grid-template-rows:none; }
+  body.vista-fija .pase > .caja{ display:block; }
+  body.vista-fija .recientes{ flex:none; max-height:60vh; overflow-y:auto; }
+}
 .reciente{
   display:flex; align-items:center; gap:12px;
   padding:10px 12px; border:1px solid var(--linea); border-radius:var(--r-s); background:#fff;
