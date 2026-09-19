@@ -30,6 +30,11 @@
   --rail: 262px;
   --tap: 46px;
 
+  /* Alto real de la barra superior y de la ventana visible (la pisa el
+     teclado en pantalla); JS las mantiene al día — ver app.js. */
+  --topbar-h: 68px;
+  --vvh: 100dvh;
+
   --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --texto: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
@@ -374,6 +379,13 @@ tbody tr:hover{ background:#F8FAFC; }
   background:rgba(255,255,255,.08); color:#fff;
   -webkit-appearance:none;
 }
+/* Área de resultados: es la que se desplaza cuando el teclado no deja
+   espacio. Su alto máximo lo ajusta JS con la altura visible real
+   (visualViewport), así las sugerencias nunca quedan tapadas. */
+#resultado{
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  scrollbar-gutter:stable;
+}
 .buscador input::placeholder{ color:rgba(255,255,255,.4); letter-spacing:.02em; font-weight:500; }
 .buscador input:focus{ outline:none; border-color:var(--rojo); background:rgba(255,255,255,.14); }
 
@@ -393,15 +405,15 @@ tbody tr:hover{ background:#F8FAFC; }
 .sugerencias{ margin-top:12px; display:flex; flex-direction:column; gap:6px; }
 .sugerencia{
   display:flex; justify-content:space-between; align-items:center; gap:10px;
-  width:100%; text-align:left; padding:10px 14px; min-height:var(--tap);
+  width:100%; text-align:left; padding:12px 14px; min-height:52px;
   background:rgba(255,255,255,.1); border:0; border-radius:var(--r-s); color:#fff;
-  font-size:.9rem; transition:background .15s ease;
+  font-size:1rem; transition:background .15s ease;
 }
 .sugerencia > span:first-child{ min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sugerencia > span:last-child{ flex:none; }
 .sugerencia:hover{ background:rgba(255,255,255,.2); }
 .sugerencia b{ font-variant-numeric:tabular-nums; }
-.sugerencia span{ color:#A9C4DC; font-size:.8rem; }
+.sugerencia span{ color:#A9C4DC; font-size:.85rem; }
 
 .recientes{ display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow-y:auto; }
 
@@ -414,25 +426,29 @@ body.vista-fija .cascada{ flex:1; min-height:0; display:flex; flex-direction:col
 body.vista-fija .pase{ flex:1; min-height:0; align-items:stretch; }
 body.vista-fija .pase > .caja{ display:flex; flex-direction:column; min-height:0; }
 body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
-@media (max-width:1000px){
-  body.vista-fija .pase{ grid-template-rows:auto 1fr; }
-}
-
-/* En celular el modo "pantalla fija" se desactiva: se vuelve al scroll normal de página. */
-@media (max-width:720px){
+/* En celular Y tablet (donde puede salir un teclado en pantalla) el modo
+   "pantalla fija" de escritorio se desactiva: se vuelve al scroll normal
+   de página, con la matrícula pegada arriba bajo la barra superior. En
+   escritorio (sin teclado táctil) se conserva el layout de alto fijo. */
+@media (max-width:1024px), (pointer:coarse){
   body.vista-fija{ overflow-x:hidden; overflow-y:auto; }
   body.vista-fija .shell{ height:auto; min-height:100svh; }
   body.vista-fija .work{ height:auto; min-height:0; overflow:visible; }
   body.vista-fija .view{ flex:none; display:block; overflow:visible; }
-  body.vista-fija .cascada{ flex:none; display:block; overflow:visible; gap:0; }
+  body.vista-fija .cascada{ flex:none; display:block; overflow:visible; }
+  body.vista-fija .cascada > * + *{ margin-top:16px; }
   body.vista-fija .pase{ flex:none; display:grid; grid-template-rows:none; }
   body.vista-fija .pase > .caja{ display:block; }
   body.vista-fija .recientes{ flex:none; max-height:60vh; overflow-y:auto; }
 
-  /* La caja de matrícula queda pegada arriba mientras se baja por la lista;
-     al volver a subir a su lugar original, se suelta sola. */
+  /* La caja de matrícula queda pegada bajo la barra superior mientras se
+     baja por la lista; al volver a subir a su lugar original, se suelta
+     sola. El alto de #resultado (dentro) lo recalcula app.js/asistencia.js
+     para que las sugerencias no queden tapadas por el teclado. */
   body.vista-fija .pase > .buscador{
-    position:sticky; top:8px; z-index:20;
+    position:sticky;
+    top:calc(var(--topbar-h) + 8px);
+    z-index:20;
   }
 }
 .reciente{
@@ -442,8 +458,8 @@ body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
 }
 .reciente i{ width:9px; height:9px; border-radius:50%; background:var(--verde); flex:none; }
 .reciente div{ flex:1; min-width:0; }
-.reciente strong{ display:block; font-size:.88rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.reciente span{ font-size:.78rem; color:var(--tinta-suave); }
+.reciente strong{ display:block; font-size:.98rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.reciente span{ font-size:.82rem; color:var(--tinta-suave); }
 
 /* ============================================================
    DIÁLOGO, AVISOS
@@ -522,7 +538,9 @@ body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
 }
 
 @media (max-width:560px){
-  .buscador input{ font-size:1.35rem; min-height:56px; }
+  .buscador input{ font-size:1.4rem; min-height:58px; }
+  .buscador{ padding:18px; }
+  .ficha__nom{ font-size:1.15rem; }
   .dato{ padding:14px 15px; }
   .dato b{ font-size:1.6rem; }
   .dato span{ font-size:.79rem; }
