@@ -7,7 +7,7 @@ import {
 import { estado, buscarAlumnos, cargarCatalogo, titulo } from "../app.js";
 import {
   $, $$, esc, avisar, limpiaMatricula, rebote, cargando, vacio,
-  nombreMes, hora, pitido, vibrar, confirmar, personalizar, enviarCorreo
+  hora, pitido, vibrar, confirmar, personalizar, enviarCorreo
 } from "../utils.js";
 
 let actividades = [];
@@ -67,7 +67,6 @@ function pintar(cont) {
             </select>
           </div>
         </div>
-        <div id="ficha-act" class="aviso" style="margin-top:16px"></div>
       </div>
 
       <div class="pase">
@@ -92,7 +91,6 @@ function pintar(cont) {
     actual = actividades.find(a => a.id === e.target.value);
     localStorage.setItem(RECORDAR, actual.id);
     escuchar();
-    pintarActividad();
     $("#q").focus();
   });
 
@@ -101,27 +99,19 @@ function pintar(cont) {
   q.addEventListener("keydown", e => {
     if (e.key !== "Enter") return;
     e.preventDefault();
+    const auto = $("#auto").value === "1";
+    if (!auto) return;   // en modo manual, Enter no registra: hay que dar clic en "Registrar asistencia"
     const { exacto, parecidos } = buscarAlumnos(q.value);
     const elegido = exacto || (parecidos.length === 1 ? parecidos[0] : null);
     if (elegido) registrar(elegido);
     else avisar("Esa matrícula no aparece en la base.", "mal");
   });
 
-  pintarActividad();
   escuchar();
   setTimeout(() => q.focus(), 150);
 }
 
-function pintarActividad() {
-  $("#ficha-act").innerHTML = `<div>
-      <strong>${esc(actual.principioTitulo || "")} · ${esc(nombreMes(actual.mes))}</strong><br>
-      ${esc(actual.titulo)}${actual.lugar ? ` — ${esc(actual.lugar)}` : ""}.
-      Suma <strong>${actual.puntos ?? 1}</strong> ${(actual.puntos === 1 || actual.puntos == null) ? "punto" : "puntos"} extra al día siguiente.
-    </div>`;
-}
-
-/* Escucha en vivo: varias personas pueden pasar lista a la vez. */
-function escuchar() {
+function pintarRecientes() {
   desuscribir?.();
   registrados = new Map();
   desuscribir = onSnapshot(
