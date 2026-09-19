@@ -1,18 +1,19 @@
 /* Pase de lista. Se escribe la matrícula, aparece el alumno y queda registrado. */
 
 import {
-  db, doc, setDoc, getDocs, collection, query, where, deleteDoc,
+  db, doc, getDoc, setDoc, getDocs, collection, query, where, deleteDoc,
   updateDoc, serverTimestamp, onSnapshot, increment
 } from "../firebase.js";
 import { estado, buscarAlumnos, cargarCatalogo, titulo } from "../app.js";
 import {
   $, $$, esc, avisar, limpiaMatricula, rebote, cargando, vacio,
-  nombreMes, hora, pitido, vibrar, confirmar
+  nombreMes, hora, pitido, vibrar, confirmar, personalizar, enviarCorreo
 } from "../utils.js";
 
 let actividades = [];
 let actual = null;
 let registrados = new Map();   // matrícula → asistencia
+let plantillasConfirmacion = new Map();   // principioId → HTML de la plantilla
 let desuscribir = null;
 const RECORDAR = "ibime.actividad";
 
@@ -258,6 +259,7 @@ async function registrar(al) {
   try {
     await setDoc(doc(db, "asistencias", id), registro);
     updateDoc(doc(db, "actividades", actual.id), { total: increment(1) }).catch(() => {});
+    mandarConfirmacion(registro);
   } catch (err) {
     console.error(err);
     registrados.delete(matricula); pintarRecientes();
@@ -265,6 +267,25 @@ async function registrar(al) {
   } finally {
     guardando = false;
   }
+}
+
+/* Manda el correo de confirmación con la plantilla del principio del mes (no bloquea la UI). */
+async function mandarConfirmacion(registro) {
+  if (!registro.correo || !registro.principioId) return;
+  try {
+    let html = plantillasConfirmacion.get(registro.principioId);
+    if (html === undefined) {
+      const snap = await getDoc(doc(db, "principios", registro.principioId));
+      html = snap.exists() ? (snap.data().correoConfirmacion || null) : null;
+      plantillasConfirmacion.set(registro.principioId, html);
+    }
+    if (!html) return;
+    await enviarCorreo({
+      to: registro.correo,
+      subject: `Asistencia registrada — ${registro.actividadTitulo}`,
+      html: personalizar(html, registro)
+    });
+  } catch (err) { console.error("No se pudo mandar la confirmación:", err); }
 }
 
 async function quitar(matricula) {
