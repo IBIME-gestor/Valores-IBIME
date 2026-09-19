@@ -7,7 +7,7 @@ import { PRINCIPIOS_BASE, MESES } from "../config.js";
 import { estado, titulo } from "../app.js";
 import {
   $, $$, esc, avisar, abrirModal, confirmar, imagenAdataURL,
-  nombreMes, cargando, hoyISO
+  nombreMes, cargando, hoyISO, archivoATexto, personalizar, enviarCorreo
 } from "../utils.js";
 
 let anio = new Date().getFullYear();
@@ -94,6 +94,8 @@ function tarjeta(p) {
 function editarPrincipio(mes, cont) {
   const p = principios.find(x => x.mes === mes);
   let bannerNuevo = null;
+  let correoConfirmNuevo = null;
+  let correoGraciasNuevo = null;
 
   abrirModal({
     titulo: `${nombreMes(mes)} de ${anio}`,
@@ -107,8 +109,14 @@ function editarPrincipio(mes, cont) {
         <textarea id="f-desc" placeholder="Qué se espera de alumnos y docentes durante el mes.">${esc(p.descripcion || "")}</textarea></div>
       <div class="campo"><label for="f-img">Banner de la campaña</label>
         <input id="f-img" type="file" accept="image/*">
-        <small>Se reduce y comprime en tu equipo antes de guardarse. Ideal 1400 × 600 px.</small></div>
-      <div id="prev">${p.banner ? `<img src="${p.banner}" alt="Banner actual" style="border-radius:10px">` : ""}</div>`,
+        <small>Se reduce y comprime en tu equipo antes de guardarse. Usa 1600 × 700 px (o esa misma proporción) para que no se recorte.</small></div>
+      <div id="prev">${p.banner ? `<img src="${p.banner}" alt="Banner actual" style="border-radius:10px">` : ""}</div>
+      <div class="campo"><label for="f-correo-conf">Correo de confirmación (archivo .html)</label>
+        <input id="f-correo-conf" type="file" accept=".html,text/html">
+        <small>${p.correoConfirmacion ? "Ya hay una plantilla guardada. Sube otra solo si quieres cambiarla." : "Se manda solo en cuanto se pasa asistencia a un alumno."}</small></div>
+      <div class="campo"><label for="f-correo-gracias">Correo de agradecimiento (archivo .html)</label>
+        <input id="f-correo-gracias" type="file" accept=".html,text/html">
+        <small>${p.correoAgradecimiento ? "Ya hay una plantilla guardada. Sube otra solo si quieres cambiarla." : "Se manda cuando tú lo decidas, desde Actividades."}</small></div>`,
     acciones: [
       { texto: "Cancelar" },
       { texto: "Guardar mes", clase: "btn", fn: async () => {
@@ -123,6 +131,8 @@ function editarPrincipio(mes, cont) {
             actualizadoPor: estado.perfil.nombre
           };
           if (bannerNuevo) datos.banner = bannerNuevo;
+          if (correoConfirmNuevo) datos.correoConfirmacion = correoConfirmNuevo;
+          if (correoGraciasNuevo) datos.correoAgradecimiento = correoGraciasNuevo;
           await setDoc(doc(db, "principios", `${anio}_${mes}`), datos, { merge: true });
           avisar(`${nombreMes(mes)} guardado.`, "ok");
           await traer(); pintar(cont);
@@ -135,6 +145,16 @@ function editarPrincipio(mes, cont) {
           bannerNuevo = await imagenAdataURL(f);
           $("#prev").innerHTML = `<img src="${bannerNuevo}" alt="Vista previa" style="border-radius:10px">`;
         } catch (err) { avisar(err.message, "mal"); }
+      });
+      $("#f-correo-conf").addEventListener("change", async e => {
+        const f = e.target.files[0]; if (!f) return;
+        try { correoConfirmNuevo = await archivoATexto(f); avisar("Plantilla de confirmación cargada.", "ok", 1800); }
+        catch (err) { avisar(err.message, "mal"); }
+      });
+      $("#f-correo-gracias").addEventListener("change", async e => {
+        const f = e.target.files[0]; if (!f) return;
+        try { correoGraciasNuevo = await archivoATexto(f); avisar("Plantilla de agradecimiento cargada.", "ok", 1800); }
+        catch (err) { avisar(err.message, "mal"); }
       });
     }
   });
@@ -156,7 +176,10 @@ function verActividades(mes, cont) {
             <td><strong>${esc(a.titulo)}</strong><br><span style="font-size:.8rem;color:var(--tinta-suave)">${esc(a.lugar || "")}</span></td>
             <td class="num">${esc(a.fecha)}</td>
             <td class="num">${a.total || 0}</td>
-            <td><button class="btn btn--linea btn--chico" data-borra="${a.id}">Quitar</button></td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn--suave btn--chico" data-gracias="${a.id}" ${a.total ? "" : "disabled"}>Enviar agradecimientos</button>
+              <button class="btn btn--linea btn--chico" data-borra="${a.id}">Quitar</button>
+            </td>
           </tr>`).join("")}</tbody>
       </table></div>` : `<p style="color:var(--tinta-suave);font-size:.9rem">Todavía no hay actividades registradas para este mes.</p>`,
     acciones: [
@@ -171,9 +194,46 @@ function verActividades(mes, cont) {
         avisar("Actividad quitada.", "ok");
         await traer(); pintar(cont);
       }));
+      $$("[data-gracias]", dlg).forEach(b => b.addEventListener("click", () =>
+        enviarAgradecimientos(b.dataset.gracias, lista.find(a => a.id === b.dataset.gracias), p, b)));
     }
   });
 }
+
+/* ---------- mandar el correo de agradecimiento a quienes asistieron ---------- */
+async function enviarAgradecimientos(actividadId, actividad, p, boton) {
+  if (!p.correoAgradecimiento) {
+    avisar("Este mes todavía no tiene cargada la plantilla de agradecimiento.", "mal");
+    return;
+  }
+  if (!await confirmar(
+    "¿Enviar agradecimientos?",
+    `Se manda un correo a cada alumno que asistió a “${actividad?.titulo || ""}”. No se puede deshacer.`,
+    "Enviar"
+  )) return;
+
+  boton.disabled = true;
+  boton.textContent = "Enviando…";
+
+  const snap = await getDocs(query(collection(db, "asistencias"), where("actividadId", "==", actividadId)));
+  const registros = snap.docs.map(d => d.data()).filter(r => r.correo);
+
+  let ok = 0;
+  for (const r of registros) {
+    await enviarCorreo({
+      to: r.correo,
+      subject: `¡Gracias por participar, ${primerNombreDe(r.nombre)}!`,
+      html: personalizar(p.correoAgradecimiento, r)
+    });
+    ok++;
+  }
+
+  boton.disabled = false;
+  boton.textContent = "Enviar agradecimientos";
+  avisar(`Agradecimiento enviado a ${ok} de ${registros.length} alumnos con correo registrado.`, "ok", 4000);
+}
+
+const primerNombreDe = n => String(n || "").trim().split(/\s+/)[0] || "";
 
 function nuevaActividad(mes, cont) {
   const p = principios.find(x => x.mes === mes);
