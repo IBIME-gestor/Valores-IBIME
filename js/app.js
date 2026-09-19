@@ -317,7 +317,10 @@ async function hayVersionNueva() {
   try {
     const res = await fetch(`js/version.js?_=${Date.now()}`, { cache: "no-store" });
     if (!res.ok) return false;
-    return !(await res.text()).includes(VERSION);
+    const txt = await res.text();
+    // Si el servidor devolvió otra cosa (p. ej. index.html por el rewrite), NO recargar: evita bucles.
+    if (!txt.includes("export const VERSION")) return false;
+    return !txt.includes(VERSION);
   } catch { return false; }   // sin conexión: se revisa la próxima vez que regrese
 }
 
