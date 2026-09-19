@@ -69,6 +69,7 @@ onAuthStateChanged(auth, async usuario => {
   pintarUsuario();
   shell.hidden = false;
   boot.hidden = true;
+  medirViewport();
 
   cargarCatalogo();          // en segundo plano
   window.addEventListener("hashchange", enrutar);
@@ -269,10 +270,13 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarMenu()
    y el teclado en pantalla reduce el alto visible sin cambiar 100vh/100dvh
    en todos los navegadores. Estas dos variables CSS se mantienen al día
    para que el cuadro de matrícula (fijo) y sus sugerencias siempre
-   quepan en lo que realmente se ve. */
+   quepan en lo que realmente se ve.
+   Ojo: mientras la sesión no ha entrado, el topbar está oculto (alto 0);
+   por eso solo se guarda su medida cuando de verdad tiene tamaño, y se
+   usa ResizeObserver para volver a medir en cuanto aparece o cambia. */
 function medirViewport() {
   const tb = document.querySelector(".topbar");
-  if (tb) document.documentElement.style.setProperty("--topbar-h", `${tb.offsetHeight}px`);
+  if (tb && tb.offsetHeight > 0) document.documentElement.style.setProperty("--topbar-h", `${tb.offsetHeight}px`);
   const vv = window.visualViewport;
   document.documentElement.style.setProperty("--vvh", `${Math.round(vv ? vv.height : window.innerHeight)}px`);
 }
@@ -281,6 +285,15 @@ window.addEventListener("orientationchange", medirViewport);
 window.visualViewport?.addEventListener("resize", medirViewport);
 window.visualViewport?.addEventListener("scroll", medirViewport);
 medirViewport();
+
+const topbarEl = document.querySelector(".topbar");
+if (topbarEl && "ResizeObserver" in window) {
+  new ResizeObserver(medirViewport).observe(topbarEl);
+} else {
+  // Respaldo si el navegador no tiene ResizeObserver: reintenta poco
+  // después de entrar, cuando el topbar ya es visible.
+  setTimeout(medirViewport, 300);
+}
 
 /* ---------- estado de la red ---------- */
 function pintarRed() {
