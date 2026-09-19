@@ -1,6 +1,6 @@
 /* Piezas reutilizables: avisos, diálogos, exportación, imágenes. */
 
-import { AJUSTES, MESES } from "./config.js";
+import { AJUSTES, MESES, CORREO } from "./config.js";
 
 /* ---------- atajos ---------- */
 export const $  = (s, ctx = document) => ctx.querySelector(s);
@@ -149,6 +149,46 @@ export async function imagenAdataURL(archivo) {
   const data = lienzo.toDataURL("image/jpeg", AJUSTES.calidadBanner);
   if (data.length > 900_000) throw new Error("La imagen sigue pesando demasiado. Usa una de menor tamaño.");
   return data;
+}
+
+/* ---------- plantillas de correo: leer archivo .html como texto ---------- */
+export function archivoATexto(archivo) {
+  return new Promise((ok, mal) => {
+    const r = new FileReader();
+    r.onload = () => ok(String(r.result || ""));
+    r.onerror = () => mal(new Error("No se pudo leer el archivo."));
+    r.readAsText(archivo, "UTF-8");
+  });
+}
+
+/* Reemplaza {{MARCADOR}} por el dato correspondiente del alumno/actividad. */
+export function personalizar(html, datos = {}) {
+  const mapa = {
+    NOMBRE_ALUMNO: datos.nombre, MATRICULA: datos.matricula,
+    PLANTEL: datos.plantel, NIVEL: datos.nivel,
+    GRADO: datos.grado, GRUPO: datos.grupo,
+    ACTIVIDAD: datos.actividadTitulo, PRINCIPIO: datos.principioTitulo,
+    FECHA: datos.fecha, PUNTOS: datos.puntos
+  };
+  let out = String(html || "");
+  for (const [clave, valor] of Object.entries(mapa)) {
+    out = out.replaceAll(`{{${clave}}}`, esc(valor ?? ""));
+  }
+  return out;
+}
+
+/* Manda un correo a través del Apps Script del colegio. No detiene la UI si falla. */
+export async function enviarCorreo({ to, subject, html }) {
+  if (!to || !CORREO.urlAppsScript || CORREO.urlAppsScript.includes("PON_AQUI")) return;
+  try {
+    await fetch(CORREO.urlAppsScript, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },   // evita el preflight de CORS
+      body: JSON.stringify({ clave: CORREO.clave, to, subject, html })
+    });
+  } catch (err) {
+    console.error("No se pudo mandar el correo:", err);
+  }
 }
 
 function crearBitmap(archivo) {
