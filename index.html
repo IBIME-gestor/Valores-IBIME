@@ -94,5 +94,21 @@
 </div>
 
 <script type="module" src="js/app.js"></script>
+<script>
+/* Vigilante de arranque: si en 12 s la app no salió de "Preparando…",
+   se muestra el problema y un botón para limpiar y recargar, en vez de
+   dejar la pantalla azul trabada para siempre. */
+setTimeout(function () {
+  var b = document.getElementById("boot");
+  if (!b || b.hidden) return;
+  b.innerHTML = '<img src="assets/escudo-ibime.png" alt="IBIME">' +
+    '<span>No se pudo abrir la app.</span>' +
+    '<button id="boot-retry" style="padding:12px 22px;border:0;border-radius:10px;font:inherit;font-weight:600;background:#fff;color:#0C2E4A">Limpiar y reintentar</button>';
+  document.getElementById("boot-retry").onclick = function () {
+    var go = function () { location.reload(); };
+    try { if ("caches" in window) caches.keys().then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }).then(go, go); else go(); } catch (e) { go(); }
+  };
+}, 12000);
+</script>
 </body>
 </html>
