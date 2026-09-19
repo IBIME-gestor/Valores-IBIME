@@ -41,12 +41,14 @@
 
 *,*::before,*::after{ box-sizing:border-box; }
 
-html{ -webkit-text-size-adjust:100%; max-width:100vw; overflow-x:hidden; }
+html{ -webkit-text-size-adjust:100%; overflow-x:hidden; }
 
+/* OJO: el body NO lleva overflow hidden/auto. Si lo lleva (junto con html),
+   se vuelve un contenedor de scroll propio: rompe el scroll táctil en iOS
+   y desactiva position:sticky. "clip" recorta sin crear contenedor. */
 body{
   margin:0;
-  max-width:100vw;
-  overflow-x:hidden;
+  overflow-x:clip;
   font-family:var(--texto);
   font-size:16px;
   line-height:1.5;
@@ -379,13 +381,6 @@ tbody tr:hover{ background:#F8FAFC; }
   background:rgba(255,255,255,.08); color:#fff;
   -webkit-appearance:none;
 }
-/* Área de resultados: es la que se desplaza cuando el teclado no deja
-   espacio. Su alto máximo lo ajusta JS con la altura visible real
-   (visualViewport), así las sugerencias nunca quedan tapadas. */
-#resultado{
-  overflow-y:auto; -webkit-overflow-scrolling:touch;
-  scrollbar-gutter:stable;
-}
 .buscador input::placeholder{ color:rgba(255,255,255,.4); letter-spacing:.02em; font-weight:500; }
 .buscador input:focus{ outline:none; border-color:var(--rojo); background:rgba(255,255,255,.14); }
 
@@ -417,39 +412,34 @@ tbody tr:hover{ background:#F8FAFC; }
 
 .recientes{ display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow-y:auto; }
 
-/* ---------- vista fija: en Pase de lista, solo "recientes" se desplaza ---------- */
-body.vista-fija{ overflow:hidden; }
-body.vista-fija .shell{ height:100svh; }
-body.vista-fija .work{ height:100%; min-height:0; overflow:hidden; }
-body.vista-fija .view{ flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
-body.vista-fija .cascada{ flex:1; min-height:0; display:flex; flex-direction:column; gap:18px; overflow:hidden; }
-body.vista-fija .pase{ flex:1; min-height:0; align-items:stretch; }
-body.vista-fija .pase > .caja{ display:flex; flex-direction:column; min-height:0; }
-body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
-/* En celular Y tablet (donde puede salir un teclado en pantalla) el modo
-   "pantalla fija" de escritorio se desactiva: se vuelve al scroll normal
-   de página, con la matrícula pegada arriba bajo la barra superior. En
-   escritorio (sin teclado táctil) se conserva el layout de alto fijo. */
-@media (max-width:1024px), (pointer:coarse){
-  body.vista-fija{ overflow-x:hidden; overflow-y:auto; }
-  body.vista-fija .shell{ height:auto; min-height:100svh; }
-  body.vista-fija .work{ height:auto; min-height:0; overflow:visible; }
-  body.vista-fija .view{ flex:none; display:block; overflow:visible; }
-  body.vista-fija .cascada{ flex:none; display:block; overflow:visible; }
-  body.vista-fija .cascada > * + *{ margin-top:16px; }
-  body.vista-fija .pase{ flex:none; display:grid; grid-template-rows:none; }
-  body.vista-fija .pase > .caja{ display:block; }
-  body.vista-fija .recientes{ flex:none; max-height:60vh; overflow-y:auto; }
+/* ---------- vista fija: solo en ESCRITORIO con mouse ---------- */
+@media (min-width:1025px) and (pointer:fine){
+  body.vista-fija{ overflow:hidden; }
+  body.vista-fija .shell{ height:100svh; }
+  body.vista-fija .work{ height:100%; min-height:0; overflow:hidden; }
+  body.vista-fija .view{ flex:1; min-height:0; display:flex; flex-direction:column; overflow:hidden; }
+  body.vista-fija .cascada{ flex:1; min-height:0; display:flex; flex-direction:column; gap:18px; overflow:hidden; }
+  body.vista-fija .pase{ flex:1; min-height:0; align-items:stretch; }
+  body.vista-fija .pase > .caja{ display:flex; flex-direction:column; min-height:0; }
+  body.vista-fija .recientes{ flex:1; min-height:0; max-height:none; }
+  #resultado{ overflow-y:auto; max-height:40vh; }
+}
 
-  /* La caja de matrícula queda pegada bajo la barra superior mientras se
-     baja por la lista; al volver a subir a su lugar original, se suelta
-     sola. El alto de #resultado (dentro) lo recalcula app.js/asistencia.js
-     para que las sugerencias no queden tapadas por el teclado. */
-  body.vista-fija .pase > .buscador{
-    position:sticky;
-    top:calc(var(--topbar-h) + 8px);
-    z-index:20;
-  }
+/* ---------- celular y tablet: scroll normal de página ----------
+   Sin position:sticky en la caja de matrícula ni alturas calculadas con
+   JavaScript: con el teclado abierto eso hacía que la caja creciera hasta
+   tapar toda la pantalla y el scroll se trababa. Ahora todo fluye normal
+   y el navegador se encarga de mostrar el campo enfocado. */
+@media (max-width:1024px), (pointer:coarse){
+  .buscador{ padding:16px; }
+  .buscador h2{ font-size:1rem; margin-bottom:2px; }
+  .buscador p{ margin-bottom:10px; }
+  #resultado{ max-height:none; overflow:visible; }
+  .sugerencias{ margin-top:10px; }
+  .ficha{ margin-top:12px; padding:14px; }
+  .recientes{ max-height:none; overflow:visible; }
+  /* espacio al final para que el teclado nunca tape el último elemento */
+  body.vista-fija .view{ padding-bottom:40vh; }
 }
 .reciente{
   display:flex; align-items:center; gap:12px;
