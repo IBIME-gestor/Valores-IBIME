@@ -20,22 +20,6 @@ const RECORDAR = "ibime.actividad";
 export function salir() {
   desuscribir?.(); desuscribir = null;
   document.body.classList.remove("vista-fija");
-  window.visualViewport?.removeEventListener("resize", ajustarResultado);
-  window.visualViewport?.removeEventListener("scroll", ajustarResultado);
-  window.removeEventListener("resize", ajustarResultado);
-}
-
-/* El alto de #resultado (las sugerencias / la ficha del alumno) se
-   recalcula con la altura visible real: cuando sale el teclado, la
-   lista de sugerencias se acorta y queda con scroll propio, en vez de
-   quedar tapada abajo. */
-function ajustarResultado() {
-  const cont = $("#resultado");
-  if (!cont) return;
-  const vv = window.visualViewport;
-  const altoVisible = vv ? vv.height : window.innerHeight;
-  const arriba = cont.getBoundingClientRect().top;
-  cont.style.maxHeight = Math.max(160, Math.round(altoVisible - arriba - 14)) + "px";
 }
 
 export async function render(cont) {
@@ -123,24 +107,10 @@ function pintar(cont) {
     else avisar("Esa matrícula no aparece en la base.", "mal");
   });
 
-  /* Al enfocar el campo, el teclado tarda un poco en aparecer (sobre
-     todo en iPad); se recalcula el espacio disponible varias veces
-     mientras se acomoda, para que las sugerencias no queden tapadas.
-     Importante: aquí NO se mueve el scroll a la fuerza — el cuadro ya
-     queda anclado arriba solo (position: sticky); forzar el scroll
-     peleaba con el propio comportamiento del navegador al abrir el
-     teclado y lo trababa. */
-  q.addEventListener("focus", () => {
-    ajustarResultado();
-    [80, 250, 450].forEach(ms => setTimeout(ajustarResultado, ms));
-  });
-  window.visualViewport?.addEventListener("resize", ajustarResultado);
-  window.visualViewport?.addEventListener("scroll", ajustarResultado);
-  window.addEventListener("resize", ajustarResultado);
-
   escuchar();
-  ajustarResultado();
-  setTimeout(() => q.focus(), 150);
+  /* En celular NO se enfoca solo: abrir el teclado al entrar desplaza todo.
+     Solo en equipos con mouse/lector de códigos. */
+  if (!window.matchMedia("(pointer:coarse)").matches) setTimeout(() => q.focus(), 150);
 }
 
 /* Escucha en vivo: varias personas pueden pasar lista a la vez. */
