@@ -111,7 +111,8 @@ function pintar(cont) {
   setTimeout(() => q.focus(), 150);
 }
 
-function pintarRecientes() {
+/* Escucha en vivo: varias personas pueden pasar lista a la vez. */
+function escuchar() {
   desuscribir?.();
   registrados = new Map();
   desuscribir = onSnapshot(
