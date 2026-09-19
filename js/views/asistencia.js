@@ -142,7 +142,7 @@ function pintarRecientes() {
       <i></i>
       <div>
         <strong>${esc(a.nombre)}</strong>
-        <span>${esc(a.matricula)} · ${esc(a.grado)}${esc(a.grupo)} · ${esc(a.plantel)}</span>
+        <span>${esc(a.matricula)} · ${esc(a.grado)} ${esc(a.grupo)} · ${esc(a.plantel)}</span>
       </div>
       <button class="iconbtn" style="color:var(--tinta-suave)" data-quita="${esc(a.matricula)}" title="Quitar registro">✕</button>
     </div>`).join("");
@@ -175,7 +175,7 @@ function evaluar(texto) {
     caja.innerHTML = `<div class="sugerencias">${parecidos.map(a => `
       <button class="sugerencia" data-pick="${esc(a.matricula)}">
         <span style="flex:1"><b>${esc(a.matricula)}</b> — ${esc(a.nombre)}</span>
-        <span>${esc(a.grado)}${esc(a.grupo)}</span>
+        <span>${esc(a.grado)} ${esc(a.grupo)}</span>
       </button>`).join("")}</div>`;
     $$("[data-pick]", caja).forEach(b => b.addEventListener("click", () => {
       const al = estado.porMatricula.get(limpiaMatricula(b.dataset.pick));
