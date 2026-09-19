@@ -264,6 +264,24 @@ $("#btn-menu").addEventListener("click", abrirMenu);
 $("#scrim").addEventListener("click", cerrarMenu);
 document.addEventListener("keydown", e => { if (e.key === "Escape") cerrarMenu(); });
 
+/* ---------- medidas reales de pantalla ----------
+   El alto del topbar puede variar (notch, tamaño de letra del sistema),
+   y el teclado en pantalla reduce el alto visible sin cambiar 100vh/100dvh
+   en todos los navegadores. Estas dos variables CSS se mantienen al día
+   para que el cuadro de matrícula (fijo) y sus sugerencias siempre
+   quepan en lo que realmente se ve. */
+function medirViewport() {
+  const tb = document.querySelector(".topbar");
+  if (tb) document.documentElement.style.setProperty("--topbar-h", `${tb.offsetHeight}px`);
+  const vv = window.visualViewport;
+  document.documentElement.style.setProperty("--vvh", `${Math.round(vv ? vv.height : window.innerHeight)}px`);
+}
+window.addEventListener("resize", medirViewport);
+window.addEventListener("orientationchange", medirViewport);
+window.visualViewport?.addEventListener("resize", medirViewport);
+window.visualViewport?.addEventListener("scroll", medirViewport);
+medirViewport();
+
 /* ---------- estado de la red ---------- */
 function pintarRed() {
   const n = $("#net"), enLinea = navigator.onLine;
