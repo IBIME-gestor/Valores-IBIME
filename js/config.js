@@ -53,3 +53,9 @@ export const AJUSTES = {
 
 export const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
   "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+/* 6) Envío de correos (confirmación y agradecimiento) vía Apps Script del colegio */
+export const CORREO = {
+  urlAppsScript: "PON_AQUI_LA_URL_DEL_APPS_SCRIPT",   // termina en /exec
+  clave: "PON_AQUI_UNA_PALABRA_SECRETA_LARGA"          // debe ser IDÉNTICA a la del Apps Script
+};
